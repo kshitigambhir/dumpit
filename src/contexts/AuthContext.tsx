@@ -1,6 +1,7 @@
 import { createUserWithEmailAndPassword, signOut as firebaseSignOut, User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { auth } from '../lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
 /*
   Previous Supabase logic (kept here as comments for reference):
@@ -23,7 +24,7 @@ import { auth } from '../lib/firebase';
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
-  signUp: (email: string, password: string, username?: string) => Promise<{ error: any | null }>;
+  signUp: (email: string, password: string, username: string) => Promise<{ error: any | null }>;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
 }
@@ -43,12 +44,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, username: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // Optionally: create a user_profiles record in your Firestore using the Firebase uid
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Create user profile in Firestore (using 'users' collection to match Profile component)
+      await setDoc(doc(db, 'users', user.uid), {
+        id: user.uid,
+        username,
+        email,
+        share_by_default: false,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      });
+
+      console.log('User profile created successfully');
       return { error: null };
     } catch (error) {
+      console.error('Signup error:', error);
       return { error };
     }
   };
