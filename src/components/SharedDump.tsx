@@ -4,6 +4,25 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 
+// Helper function to safely format dates
+function formatDate(dateValue: any): string {
+  if (!dateValue) return '';
+  
+  try {
+    // Handle Firestore Timestamp objects
+    if (dateValue && typeof dateValue.toDate === 'function') {
+      return dateValue.toDate().toLocaleDateString();
+    }
+    
+    // Handle string dates or timestamps
+    const date = new Date(dateValue);
+    return isNaN(date.getTime()) ? '' : date.toLocaleDateString();
+  } catch (e) {
+    console.error('Error formatting date:', e);
+    return '';
+  }
+}
+
 interface Resource {
   id: string;
   user_id: string;
@@ -37,12 +56,46 @@ export function SharedDump() {
 
   const loadPublicResources = async () => {
     setLoading(true);
-    const q = query(collection(db, 'resources'), where('is_public', '==', true), where('user_id', '!=', user!.uid), orderBy('created_at', 'desc'));
-    const querySnapshot = await getDocs(q);
-    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
-    setResources(data);
-    const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
-    setTags(uniqueTags);
+    try {
+      // Try the optimal query first (requires the composite index)
+      const q = query(
+        collection(db, 'resources'), 
+        where('is_public', '==', true), 
+        where('user_id', '!=', user!.uid), 
+        orderBy('user_id'), 
+        orderBy('created_at', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
+      setResources(data);
+      const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
+      setTags(uniqueTags);
+    } catch (error) {
+      console.log("Index not ready yet, using fallback query");
+      
+      // Fallback query: Get all public resources and filter client-side
+      const fallbackQuery = query(
+        collection(db, 'resources'),
+        where('is_public', '==', true)
+      );
+      
+      const querySnapshot = await getDocs(fallbackQuery);
+      
+      // Filter out the current user's resources and sort manually
+      const allData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
+      const filteredData = allData.filter(item => item.user_id !== user!.uid);
+      
+      // Manual sorting by created_at in descending order
+      filteredData.sort((a, b) => {
+        const dateA = a.created_at instanceof Date ? a.created_at : new Date(a.created_at);
+        const dateB = b.created_at instanceof Date ? b.created_at : new Date(b.created_at);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      setResources(filteredData);
+      const uniqueTags = Array.from(new Set(filteredData.map(r => r.tag)));
+      setTags(uniqueTags);
+    }
     setLoading(false);
   };
 
@@ -217,7 +270,7 @@ export function SharedDump() {
                 </button>
 
                 <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                  {new Date(resource.created_at).toLocaleDateString()}
+                  {formatDate(resource.created_at)}
                 </div>
               </div>
             );

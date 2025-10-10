@@ -5,6 +5,25 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { EditResource } from './EditResource';
 
+// Helper function to safely format dates
+function formatDate(dateValue: any): string {
+  if (!dateValue) return '';
+  
+  try {
+    // Handle Firestore Timestamp objects
+    if (dateValue && typeof dateValue.toDate === 'function') {
+      return dateValue.toDate().toLocaleDateString();
+    }
+    
+    // Handle string dates or timestamps
+    const date = new Date(dateValue);
+    return isNaN(date.getTime()) ? '' : date.toLocaleDateString();
+  } catch (e) {
+    console.error('Error formatting date:', e);
+    return '';
+  }
+}
+
 interface Resource {
   id: string;
   user_id: string;
@@ -202,7 +221,7 @@ export function Dashboard() {
               </a>
 
               <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                {new Date(resource.created_at).toLocaleDateString()}
+                {formatDate(resource.created_at)}
               </div>
             </div>
           ))}
