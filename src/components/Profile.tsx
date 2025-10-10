@@ -28,7 +28,7 @@ export function Profile() {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('id', user?.uid)
+      .eq('id', user?.id)
       .maybeSingle();
 
     if (!error && data) {
@@ -43,7 +43,7 @@ export function Profile() {
     const { data: allResources } = await supabase
       .from('resources')
       .select('is_public')
-      .eq('user_id', user?.uid);
+      .eq('user_id', user?.id);
 
     if (allResources) {
       const publicCount = allResources.filter((r: any) => r.is_public).length;
@@ -66,7 +66,7 @@ export function Profile() {
     const { error: updateError } = await supabase
       .from('user_profiles')
       .update({ username: username.trim(), share_by_default: shareByDefault })
-      .eq('id', user?.uid);
+      .eq('id', user?.id);
 
     if (updateError) {
       if ((updateError as any).code === '23505') setError('Username already taken');

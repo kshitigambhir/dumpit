@@ -1,7 +1,7 @@
-import { CheckCircle, Loader2, Save, X } from 'lucide-react';
 import { useState } from 'react';
+import { supabase, Resource } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Resource, supabase } from '../lib/supabase';
+import { Save, Loader2, CheckCircle, X } from 'lucide-react';
 
 const PREDEFINED_TAGS = [
   'Tutorial',
@@ -55,7 +55,7 @@ export function EditResource({ resource, onSuccess, onCancel }: EditResourceProp
         is_public: isPublic,
       })
       .eq('id', resource.id)
-  .eq('user_id', user?.uid);
+      .eq('user_id', user?.id);
 
     if (updateError) {
       setError('Failed to update resource. Please try again.');
