@@ -1,6 +1,7 @@
+import { LayoutDashboard, LogOut, Plus, Share2, User } from 'lucide-react';
 import { ReactNode } from 'react';
+import logoImage from '../assets/LogoSVG.jpg';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, Plus, Share2, User, LogOut } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,8 +25,8 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
-                <span className="text-xl font-bold text-white">D</span>
+              <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
+                <img src={logoImage} alt="DumpIt Logo" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                 DumpIt

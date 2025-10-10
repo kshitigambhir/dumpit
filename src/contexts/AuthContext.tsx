@@ -1,6 +1,15 @@
-import { createUserWithEmailAndPassword, signOut as firebaseSignOut, User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  User as FirebaseUser,
+  getAdditionalUserInfo,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup
+} from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 /*
@@ -26,6 +35,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, username: string) => Promise<{ error: any | null }>;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  signInWithGoogle: () => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -80,8 +90,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+      
+      // Check if this is a new user
+      const additionalUserInfo = getAdditionalUserInfo(userCredential);
+      const isNewUser = additionalUserInfo?.isNewUser;
+      
+      if (isNewUser) {
+        // Create user profile in Firestore for new Google users
+        await setDoc(doc(db, 'users', user.uid), {
+          id: user.uid,
+          username: user.displayName || user.email?.split('@')[0] || 'User',
+          email: user.email,
+          share_by_default: false,
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
+        });
+        console.log('Google user profile created successfully');
+      } else {
+        // Check if user has a profile already (for existing Google accounts)
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
+        if (!userDoc.exists()) {
+          // Create profile if it doesn't exist yet (edge case)
+          await setDoc(doc(db, 'users', user.uid), {
+            id: user.uid,
+            username: user.displayName || user.email?.split('@')[0] || 'User',
+            email: user.email,
+            share_by_default: false,
+            created_at: serverTimestamp(),
+            updated_at: serverTimestamp(),
+          });
+          console.log('Google user profile created for existing user');
+        }
+      }
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      return { error };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
