@@ -39,15 +39,23 @@ export function AddResource({ onSuccess }: AddResourceProps) {
   }, [user]);
 
   const loadUserProfile = async () => {
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user?.id)
-      .maybeSingle();
+    if (!user) return;
+    
+    try {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    if (data) {
-      setUserProfile(data);
-      setIsPublic(data.share_by_default);
+      if (data) {
+        setUserProfile(data);
+        setIsPublic(data.share_by_default);
+      }
+    } catch (err) {
+      console.error('Error loading user profile:', err);
+      // Use default value if profile not found
+      setIsPublic(false);
     }
   };
 

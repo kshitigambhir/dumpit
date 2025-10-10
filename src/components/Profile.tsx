@@ -22,34 +22,50 @@ export function Profile() {
   }, [user]);
 
   const loadProfile = async () => {
+    if (!user) return;
+    
     setLoading(true);
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user?.id)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    if (!error && data) {
-      setProfile(data);
-      setUsername(data.username);
-      setShareByDefault(data.share_by_default);
+      if (!error && data) {
+        setProfile(data);
+        setUsername(data.username);
+        setShareByDefault(data.share_by_default);
+      } else if (error) {
+        console.error('Error loading profile:', error);
+        setError('Could not load profile. Please try refreshing.');
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const loadStats = async () => {
-    const { data: allResources } = await supabase
-      .from('resources')
-      .select('is_public')
-      .eq('user_id', user?.id);
+    if (!user) return;
+    
+    try {
+      const { data: allResources } = await supabase
+        .from('resources')
+        .select('is_public')
+        .eq('user_id', user.id);
 
-    if (allResources) {
-      const publicCount = allResources.filter(r => r.is_public).length;
-      setStats({
-        total: allResources.length,
-        public: publicCount,
-        private: allResources.length - publicCount,
-      });
+      if (allResources) {
+        const publicCount = allResources.filter(r => r.is_public).length;
+        setStats({
+          total: allResources.length,
+          public: publicCount,
+          private: allResources.length - publicCount,
+        });
+      }
+    } catch (err) {
+      console.error('Error loading stats:', err);
     }
   };
 
