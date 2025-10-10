@@ -1,8 +1,20 @@
-import { useState, useEffect } from 'react';
-import { supabase, Resource } from '../lib/supabase';
+import { collection, deleteDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { Edit, ExternalLink, Filter, Globe, Loader2, Lock, Search, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, Filter, ExternalLink, Trash2, Lock, Globe, Loader2, Edit } from 'lucide-react';
+import { db } from '../lib/firebase';
 import { EditResource } from './EditResource';
+
+interface Resource {
+  id: string;
+  user_id: string;
+  title: string;
+  link: string;
+  note?: string;
+  tag: string;
+  is_public: boolean;
+  created_at: Date;
+}
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -26,17 +38,12 @@ export function Dashboard() {
 
   const loadResources = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('resources')
-      .select('*')
-      .eq('user_id', user?.id)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setResources(data);
-      const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
-      setTags(uniqueTags);
-    }
+    const q = query(collection(db, 'resources'), where('user_id', '==', user!.uid), orderBy('created_at', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
+    setResources(data);
+    const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
+    setTags(uniqueTags);
     setLoading(false);
   };
 
@@ -63,13 +70,11 @@ export function Dashboard() {
   const deleteResource = async (id: string) => {
     if (!confirm('Are you sure you want to delete this resource?')) return;
 
-    const { error } = await supabase
-      .from('resources')
-      .delete()
-      .eq('id', id);
-
-    if (!error) {
+    try {
+      await deleteDoc(doc(db, 'resources', id));
       loadResources();
+    } catch (error) {
+      // handle error
     }
   };
 

@@ -1,7 +1,7 @@
+import { doc, updateDoc } from 'firebase/firestore';
+import { CheckCircle, Loader2, Save, X } from 'lucide-react';
 import { useState } from 'react';
-import { supabase, Resource } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { Save, Loader2, CheckCircle, X } from 'lucide-react';
+import { db } from '../lib/firebase';
 
 const PREDEFINED_TAGS = [
   'Tutorial',
@@ -16,6 +16,17 @@ const PREDEFINED_TAGS = [
   'Other'
 ];
 
+interface Resource {
+  id: string;
+  user_id: string;
+  title: string;
+  link: string;
+  note?: string;
+  tag: string;
+  is_public: boolean;
+  created_at: Date;
+}
+
 interface EditResourceProps {
   resource: Resource;
   onSuccess: () => void;
@@ -23,7 +34,6 @@ interface EditResourceProps {
 }
 
 export function EditResource({ resource, onSuccess, onCancel }: EditResourceProps) {
-  const { user } = useAuth();
   const [title, setTitle] = useState(resource.title);
   const [link, setLink] = useState(resource.link);
   const [note, setNote] = useState(resource.note || '');
@@ -45,27 +55,22 @@ export function EditResource({ resource, onSuccess, onCancel }: EditResourceProp
       return;
     }
 
-    const { error: updateError } = await supabase
-      .from('resources')
-      .update({
+    try {
+      const docRef = doc(db, 'resources', resource.id);
+      await updateDoc(docRef, {
         title,
         link,
         note: note.trim() || null,
         tag,
         is_public: isPublic,
-      })
-      .eq('id', resource.id)
-      .eq('user_id', user?.id);
-
-    if (updateError) {
-      setError('Failed to update resource. Please try again.');
-      setLoading(false);
-    } else {
+      });
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
         onSuccess();
       }, 1000);
+    } catch (error) {
+      setError('Failed to update resource. Please try again.');
     }
 
     setLoading(false);

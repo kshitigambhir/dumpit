@@ -1,7 +1,19 @@
-import { useState, useEffect } from 'react';
-import { supabase, Resource } from '../lib/supabase';
+import { addDoc, collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { CheckCircle, ExternalLink, Filter, Loader2, Plus, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, Filter, ExternalLink, Plus, CheckCircle, Loader2 } from 'lucide-react';
+import { db } from '../lib/firebase';
+
+interface Resource {
+  id: string;
+  user_id: string;
+  title: string;
+  link: string;
+  note?: string;
+  tag: string;
+  is_public: boolean;
+  created_at: Date;
+}
 
 export function SharedDump() {
   const { user } = useAuth();
@@ -25,31 +37,21 @@ export function SharedDump() {
 
   const loadPublicResources = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('resources')
-      .select('*')
-      .eq('is_public', true)
-      .neq('user_id', user?.id)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setResources(data);
-      const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
-      setTags(uniqueTags);
-    }
+    const q = query(collection(db, 'resources'), where('is_public', '==', true), where('user_id', '!=', user!.uid), orderBy('created_at', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
+    setResources(data);
+    const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
+    setTags(uniqueTags);
     setLoading(false);
   };
 
   const loadUserResources = async () => {
-    const { data } = await supabase
-      .from('resources')
-      .select('link')
-      .eq('user_id', user?.id);
-
-    if (data) {
-      const links = new Set(data.map(r => r.link));
-      setSavedResources(links);
-    }
+    const q = query(collection(db, 'resources'), where('user_id', '==', user!.uid));
+    const querySnapshot = await getDocs(q);
+    const data = querySnapshot.docs.map(doc => doc.data());
+    const links = new Set(data.map((r: any) => r.link));
+    setSavedResources(links);
   };
 
   const filterResources = () => {
@@ -75,19 +77,19 @@ export function SharedDump() {
   const saveToMyDump = async (resource: Resource) => {
     setSavingId(resource.id);
 
-    const { error } = await supabase
-      .from('resources')
-      .insert({
-        user_id: user?.id,
+    try {
+      await addDoc(collection(db, 'resources'), {
+        user_id: user!.uid,
         title: resource.title,
         link: resource.link,
         note: resource.note,
         tag: resource.tag,
         is_public: false,
+        created_at: new Date(),
       });
-
-    if (!error) {
       setSavedResources(new Set([...savedResources, resource.link]));
+    } catch (error) {
+      // handle error
     }
 
     setSavingId(null);

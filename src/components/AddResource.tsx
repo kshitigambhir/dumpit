@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { supabase, UserProfile } from '../lib/supabase';
+import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
+import { CheckCircle, Loader2, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Loader2, CheckCircle } from 'lucide-react';
+import { db } from '../lib/firebase';
 
 const PREDEFINED_TAGS = [
   'Tutorial',
@@ -15,6 +16,13 @@ const PREDEFINED_TAGS = [
   'Library',
   'Other'
 ];
+
+interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  share_by_default: boolean;
+}
 
 interface AddResourceProps {
   onSuccess: () => void;
@@ -39,13 +47,11 @@ export function AddResource({ onSuccess }: AddResourceProps) {
   }, [user]);
 
   const loadUserProfile = async () => {
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user?.id)
-      .maybeSingle();
+    const docRef = doc(db, 'users', user!.uid);
+    const docSnap = await getDoc(docRef);
 
-    if (data) {
+    if (docSnap.exists()) {
+      const data = docSnap.data() as UserProfile;
       setUserProfile(data);
       setIsPublic(data.share_by_default);
     }
@@ -63,20 +69,16 @@ export function AddResource({ onSuccess }: AddResourceProps) {
       return;
     }
 
-    const { error: insertError } = await supabase
-      .from('resources')
-      .insert({
-        user_id: user?.id,
+    try {
+      await addDoc(collection(db, 'resources'), {
+        user_id: user!.uid,
         title,
         link,
         note: note.trim() || null,
         tag,
         is_public: isPublic,
+        created_at: new Date(),
       });
-
-    if (insertError) {
-      setError('Failed to add resource. Please try again.');
-    } else {
       setSuccess(true);
       setTitle('');
       setLink('');
@@ -88,6 +90,8 @@ export function AddResource({ onSuccess }: AddResourceProps) {
         setSuccess(false);
         onSuccess();
       }, 1500);
+    } catch (error) {
+      setError('Failed to add resource. Please try again.');
     }
 
     setLoading(false);

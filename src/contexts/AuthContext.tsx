@@ -1,71 +1,69 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, AuthError } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { createUserWithEmailAndPassword, signOut as firebaseSignOut, User as FirebaseUser, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { auth } from '../lib/firebase';
+
+/*
+  Previous Supabase logic (kept here as comments for reference):
+
+  - signUp(email, password, username):
+    * called supabase.auth.signUp({ email, password })
+    * on success inserted a row into `user_profiles` with id = data.user.id, username, email
++   * This required the `user_profiles` table and RLS policies to allow INSERT when auth.uid() = id.
+
+  - signIn(email, password):
+    * called supabase.auth.signInWithPassword({ email, password })
+
+  - signOut():
+    * called supabase.auth.signOut()
+
+  Notes: When using Supabase Auth + RLS you needed to ensure the `user_profiles` row was created with the
+  same `id` as the Supabase auth user (auth.users.id) so RLS policies would permit reads/updates.
+*/
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseUser | null;
   loading: boolean;
-  signUp: (email: string, password: string, username: string) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, username?: string) => Promise<{ error: any | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
-        setUser(session?.user ?? null);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, username: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (!error && data.user) {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: data.user.id,
-          username,
-          email,
-          share_by_default: false,
-        });
-
-      if (profileError) {
-        return { error: profileError as unknown as AuthError };
-      }
+  const signUp = async (email: string, password: string) => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // Optionally: create a user_profiles record in your Firestore using the Firebase uid
+      return { error: null };
+    } catch (error) {
+      return { error };
     }
-
-    return { error };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    return { error };
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
   };
 
   return (

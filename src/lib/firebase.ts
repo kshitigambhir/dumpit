@@ -1,6 +1,7 @@
 import { isSupported as analyticsSupported, getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 // Read config from Vite env (recommended). These should be set in your .env as VITE_FIREBASE_*
 const firebaseConfig = {
@@ -25,6 +26,7 @@ if (missing.length) {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig as any);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 // Guard analytics initialization: it will fail in SSR or if measurementId is not provided
 (async () => {

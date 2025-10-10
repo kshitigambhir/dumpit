@@ -1,7 +1,16 @@
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { CheckCircle, Globe, Loader2, Lock, Save, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase, UserProfile } from '../lib/supabase';
+import { db } from '../lib/firebase';
+
+interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  share_by_default: boolean;
+  created_at?: string;
+}
 
 // Clean Profile component — minimal, readable, and syntactically correct
 export function Profile() {
@@ -25,13 +34,11 @@ export function Profile() {
 
   const loadProfile = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user?.id)
-      .maybeSingle();
+    const docRef = doc(db, 'users', user!.uid);
+    const docSnap = await getDoc(docRef);
 
-    if (!error && data) {
+    if (docSnap.exists()) {
+      const data = docSnap.data() as UserProfile;
       setProfile(data);
       setUsername(data.username);
       setShareByDefault(Boolean(data.share_by_default));
@@ -40,15 +47,11 @@ export function Profile() {
   };
 
   const loadStats = async () => {
-    const { data: allResources } = await supabase
-      .from('resources')
-      .select('is_public')
-      .eq('user_id', user?.id);
-
-    if (allResources) {
-      const publicCount = allResources.filter((r: any) => r.is_public).length;
-      setStats({ total: allResources.length, public: publicCount, private: allResources.length - publicCount });
-    }
+    const q = query(collection(db, 'resources'), where('user_id', '==', user!.uid));
+    const querySnapshot = await getDocs(q);
+    const allResources = querySnapshot.docs.map(doc => doc.data());
+    const publicCount = allResources.filter((r: any) => r.is_public).length;
+    setStats({ total: allResources.length, public: publicCount, private: allResources.length - publicCount });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,17 +66,14 @@ export function Profile() {
       return;
     }
 
-    const { error: updateError } = await supabase
-      .from('user_profiles')
-      .update({ username: username.trim(), share_by_default: shareByDefault })
-      .eq('id', user?.id);
-
-    if (updateError) {
-      if ((updateError as any).code === '23505') setError('Username already taken');
-      else setError('Failed to update profile');
-    } else {
+    try {
+      const docRef = doc(db, 'users', user!.uid);
+      await updateDoc(docRef, { username: username.trim(), share_by_default: shareByDefault });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+    } catch (error: any) {
+      if (error.code === 'permission-denied') setError('Permission denied');
+      else setError('Failed to update profile');
     }
 
     setSaving(false);
@@ -144,7 +144,7 @@ export function Profile() {
       <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
         <h3 className="text-xl font-bold text-gray-900 mb-4">About DumpIt</h3>
         <p className="text-gray-600 mb-4">DumpIt is your personal resource vault where you can save, organize, and share valuable links and resources.</p>
-        <div className="text-sm text-gray-500">Joined {profile ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}</div>
+        <div className="text-sm text-gray-500">Joined {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'}</div>
       </section>
     </div>
   );
