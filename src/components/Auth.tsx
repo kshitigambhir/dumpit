@@ -19,7 +19,11 @@ export function Auth() {
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
-        if (error) setError(error.message);
+        if (error) {
+          setError(error.message);
+          setLoading(false);
+        }
+        // Success - auth state change will trigger navigation
       } else {
         if (!username.trim()) {
           setError('Username is required');
@@ -27,11 +31,15 @@ export function Auth() {
           return;
         }
         const { error } = await signUp(email, password, username);
-        if (error) setError(error.message);
+        if (error) {
+          setError(error.message);
+          setLoading(false);
+        }
+        // Success - auth state change will trigger navigation
       }
     } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
+      console.error('Auth error:', err);
+      setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
