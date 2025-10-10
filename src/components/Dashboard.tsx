@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase, Resource } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, Filter, ExternalLink, Trash2, Lock, Globe, Loader2 } from 'lucide-react';
+import { Search, Filter, ExternalLink, Trash2, Lock, Globe, Loader2, Edit } from 'lucide-react';
+import { EditResource } from './EditResource';
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ export function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('all');
   const [tags, setTags] = useState<string[]>([]);
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -80,13 +82,24 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">My Dashboard</h2>
-          <p className="text-gray-600 mt-1">{resources.length} total resources</p>
+    <>
+      {editingResource && (
+        <EditResource
+          resource={editingResource}
+          onSuccess={() => {
+            setEditingResource(null);
+            loadResources();
+          }}
+          onCancel={() => setEditingResource(null)}
+        />
+      )}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">My Dashboard</h2>
+            <p className="text-gray-600 mt-1">{resources.length} total resources</p>
+          </div>
         </div>
-      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <div className="flex flex-col md:flex-row gap-4">
@@ -147,12 +160,22 @@ export function Dashboard() {
                     <Lock className="w-4 h-4 text-gray-400" />
                   )}
                 </div>
-                <button
-                  onClick={() => deleteResource(resource.id)}
-                  className="text-gray-400 hover:text-red-600 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditingResource(resource)}
+                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Edit resource"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteResource(resource.id)}
+                    className="text-gray-400 hover:text-red-600 transition-colors"
+                    title="Delete resource"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
@@ -181,5 +204,6 @@ export function Dashboard() {
         </div>
       )}
     </div>
+    </>
   );
 }
