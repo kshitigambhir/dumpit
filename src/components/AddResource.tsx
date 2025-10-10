@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase, UserProfile } from '../lib/supabase';
+import { CheckCircle, Loader2, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Loader2, CheckCircle } from 'lucide-react';
+import { supabase, UserProfile } from '../lib/supabase';
 
 const PREDEFINED_TAGS = [
   'Tutorial',
@@ -42,7 +42,7 @@ export function AddResource({ onSuccess }: AddResourceProps) {
     const { data } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('id', user?.id)
+      .eq('id', user?.uid)
       .maybeSingle();
 
     if (data) {
@@ -66,7 +66,7 @@ export function AddResource({ onSuccess }: AddResourceProps) {
     const { error: insertError } = await supabase
       .from('resources')
       .insert({
-        user_id: user?.id,
+        user_id: user?.uid,
         title,
         link,
         note: note.trim() || null,

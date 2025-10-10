@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase, Resource } from '../lib/supabase';
+import { CheckCircle, ExternalLink, Filter, Loader2, Plus, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, Filter, ExternalLink, Plus, CheckCircle, Loader2 } from 'lucide-react';
+import { Resource, supabase } from '../lib/supabase';
 
 export function SharedDump() {
   const { user } = useAuth();
@@ -29,7 +29,7 @@ export function SharedDump() {
       .from('resources')
       .select('*')
       .eq('is_public', true)
-      .neq('user_id', user?.id)
+  .neq('user_id', user?.uid)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -44,7 +44,7 @@ export function SharedDump() {
     const { data } = await supabase
       .from('resources')
       .select('link')
-      .eq('user_id', user?.id);
+      .eq('user_id', user?.uid);
 
     if (data) {
       const links = new Set(data.map(r => r.link));
@@ -78,7 +78,7 @@ export function SharedDump() {
     const { error } = await supabase
       .from('resources')
       .insert({
-        user_id: user?.id,
+        user_id: user?.uid,
         title: resource.title,
         link: resource.link,
         note: resource.note,

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase, Resource } from '../lib/supabase';
+import { Edit, ExternalLink, Filter, Globe, Loader2, Lock, Search, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, Filter, ExternalLink, Trash2, Lock, Globe, Loader2, Edit } from 'lucide-react';
+import { Resource, supabase } from '../lib/supabase';
 import { EditResource } from './EditResource';
 
 export function Dashboard() {
@@ -29,7 +29,7 @@ export function Dashboard() {
     const { data, error } = await supabase
       .from('resources')
       .select('*')
-      .eq('user_id', user?.id)
+      .eq('user_id', user?.uid)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
