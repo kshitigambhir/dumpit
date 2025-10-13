@@ -3,6 +3,7 @@ import { CheckCircle, Loader2, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
+import { generateTitleDescription } from '../lib/ai';
 
 const PREDEFINED_TAGS = [
   'Tutorial',
@@ -39,6 +40,7 @@ export function AddResource({ onSuccess }: AddResourceProps) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [autoLoading, setAutoLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -97,6 +99,19 @@ export function AddResource({ onSuccess }: AddResourceProps) {
     setLoading(false);
   };
 
+  const handleAutofill = async () => {
+    if (!link) return;
+    setAutoLoading(true);
+    try {
+      const result = await generateTitleDescription(link);
+      if (result.title) setTitle((prev) => (prev ? prev : result.title!));
+      if (result.description) setNote((prev) => (prev ? prev : result.description!));
+    } catch (err) {
+      // ignore
+    }
+    setAutoLoading(false);
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
@@ -125,15 +140,25 @@ export function AddResource({ onSuccess }: AddResourceProps) {
             <label htmlFor="link" className="block text-sm font-semibold text-gray-700 mb-2">
               Link
             </label>
-            <input
-              id="link"
-              type="url"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              placeholder="https://example.com"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                id="link"
+                type="url"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                placeholder="https://example.com"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                required
+              />
+              <button
+                type="button"
+                onClick={handleAutofill}
+                disabled={autoLoading}
+                className="inline-flex items-center gap-2 bg-gray-100 px-3 rounded-md border border-gray-200 text-sm"
+              >
+                {autoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Autofill'}
+              </button>
+            </div>
           </div>
 
           <div>
