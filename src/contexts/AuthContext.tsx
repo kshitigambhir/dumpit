@@ -12,24 +12,6 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
 
-/*
-  Previous Supabase logic (kept here as comments for reference):
-
-  - signUp(email, password, username):
-    * called supabase.auth.signUp({ email, password })
-    * on success inserted a row into `user_profiles` with id = data.user.id, username, email
-+   * This required the `user_profiles` table and RLS policies to allow INSERT when auth.uid() = id.
-
-  - signIn(email, password):
-    * called supabase.auth.signInWithPassword({ email, password })
-
-  - signOut():
-    * called supabase.auth.signOut()
-
-  Notes: When using Supabase Auth + RLS you needed to ensure the `user_profiles` row was created with the
-  same `id` as the Supabase auth user (auth.users.id) so RLS policies would permit reads/updates.
-*/
-
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;

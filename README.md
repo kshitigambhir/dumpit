@@ -1,11 +1,11 @@
 # DumpIt - Personal Resource Vault
 
-A modern, full-featured web application for saving, organizing, and sharing your valuable links and resources. Built with React, TypeScript, Tailwind CSS, and Supabase.
+A modern, full-featured web application for saving, organizing, and sharing your valuable links and resources. Built with React, TypeScript, Tailwind CSS, and Firebase.
 
 ## ✨ Features
 
 ### Core Functionality
-- **🔐 User Authentication**: Secure sign up and login with Supabase Auth
+- **🔐 User Authentication**: Secure sign up and login with Firebase Auth
 - **📚 Resource Management**: Create, read, update, and delete your resources
 - **🏷️ Tag Organization**: Categorize resources with predefined tags (Tutorial, Article, Video, Tool, etc.)
 - **🔍 Search & Filter**: Quickly find resources with search and tag filtering
@@ -25,7 +25,7 @@ A modern, full-featured web application for saving, organizing, and sharing your
 
 ### Prerequisites
 - Node.js 18+ and npm
-- A Supabase account (free tier works great)
+- A Firebase project (free tier works great)
 
 ### Installation
 
@@ -42,19 +42,17 @@ A modern, full-featured web application for saving, organizing, and sharing your
 
 3. **Set up environment variables**
    - Copy `.env.example` to `.env`
-   - Get your Supabase credentials from [app.supabase.com](https://app.supabase.com)
-   - Fill in your Supabase URL and Anon Key in the `.env` file
+   - This project uses Firebase for Auth and Firestore. For detailed setup steps see `FIREBASE_SETUP.md`.
+   - The `.env` file should include the Firebase client config values, for example:
 
    ```bash
-   VITE_SUPABASE_URL=https://your-project-id.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key-here
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
    ```
-
-4. **Set up the database**
-   - Run the migration file in your Supabase SQL Editor:
-   - Go to your Supabase project → SQL Editor
-   - Copy and paste the content from `supabase/migrations/20251010050457_create_resources_schema.sql`
-   - Run the query
 
 5. **Start the development server**
    ```bash
@@ -98,7 +96,7 @@ A modern, full-featured web application for saving, organizing, and sharing your
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
-- **Backend**: Supabase (Auth + Database)
+- **Backend**: Firebase (Auth + Firestore)
 - **Build Tool**: Vite
 - **Linting**: ESLint
 
@@ -118,11 +116,11 @@ dumpit/
 │   ├── contexts/
 │   │   └── AuthContext.tsx    # Authentication context
 │   ├── lib/
-│   │   └── supabase.ts        # Supabase client & types
+│   │   └── firebase.ts        # Firebase client & helpers
 │   ├── App.tsx                # Main app component
 │   ├── main.tsx               # Entry point
 │   └── index.css              # Global styles
-├── supabase/
+ 
 │   └── migrations/            # Database schema migrations
 └── public/                    # Static assets
 ```
@@ -158,7 +156,7 @@ This project is open source and available under the MIT License.
 ## 🙏 Acknowledgments
 
 - Built with [Vite](https://vitejs.dev/)
-- Powered by [Supabase](https://supabase.com/)
+ 
 - Styled with [Tailwind CSS](https://tailwindcss.com/)
 - Icons from [Lucide](https://lucide.dev/)
 
