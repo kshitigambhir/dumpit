@@ -20,6 +20,8 @@ git clone https://github.com/<your-username>/dumpit.git
 cd dumpit
 ```
 
+> Note: If you do not have push access to the main repository, fork it first using the GitHub UI ("Fork" button). Clone your fork and push branches to your fork when opening PRs.
+
 2. Create a branch for your work:
 
 ```bash
@@ -34,6 +36,18 @@ npm run dev
 ```
 
 4. Make small, focused changes. Keep each PR scoped to a single issue or small feature.
+
+When you're ready to open a PR from your fork:
+
+```bash
+# create a branch on your fork
+git checkout -b feat/short-description
+git add .
+git commit -m "feat(scope): short description"
+# push branch to your fork (origin should point to your fork)
+git push origin feat/short-description
+# Open a PR from your fork/feat/short-description -> upstream/main
+```
 
 ## How to file a good issue
 When you open an issue, please include:
