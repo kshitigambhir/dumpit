@@ -21,43 +21,34 @@ A modern, full-featured web application for saving, organizing, and sharing your
 - **Error Handling**: User-friendly error messages
 - **Success Notifications**: Visual confirmation of actions
 
-## 🚀 Getting Started
 
-### Prerequisites
-- Node.js 18+ and npm
-- A Firebase project (free tier works great)
+## Backend / Local setup (Firebase)
 
-### Installation
+This project uses Firebase Auth and Firestore for runtime data.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Rayan9064/dumpit.git
-   cd dumpit
-   ```
+1. Create a Firebase project at https://console.firebase.google.com/
+2. Enable Email/Password authentication in the Authentication settings
+3. Create a Firestore database (start in test mode for local development)
+4. Add the following environment variables to `.env` or to your deployment platform:
 
-2. **Install dependencies**
+   - VITE_FIREBASE_API_KEY
+   - VITE_FIREBASE_AUTH_DOMAIN
+   - VITE_FIREBASE_PROJECT_ID
+   - VITE_FIREBASE_STORAGE_BUCKET
+   - VITE_FIREBASE_MESSAGING_SENDER_ID
+   - VITE_FIREBASE_APP_ID
+
+5. Run the dev server:
+
    ```bash
    npm install
-   ```
-
-3. **Set up environment variables**
-   - Copy `.env.example` to `.env`
-   - This project uses Firebase for Auth and Firestore. For detailed setup steps see `FIREBASE_SETUP.md`.
-   - The `.env` file should include the Firebase client config values, for example:
-
-   ```bash
-   VITE_FIREBASE_API_KEY=your_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
-
-5. **Start the development server**
-   ```bash
    npm run dev
    ```
+
+For detailed setup steps, see [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
+
+### Migration Note
+Supabase files have been removed from the codebase as part of the migration to Firebase. If you see any references to Supabase, please open an issue.
 
 6. **Open your browser**
    - Navigate to `http://localhost:5173`
