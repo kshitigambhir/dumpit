@@ -1,6 +1,6 @@
 import { LayoutDashboard, LogOut, Plus, Share2, User } from 'lucide-react';
 import { ReactNode } from 'react';
-import logoImage from '../assets/LogoSVG.jpg';
+import logoImage from '../assets/logo.png';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {

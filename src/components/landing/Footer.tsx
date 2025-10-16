@@ -1,4 +1,6 @@
+
 import { Github, Twitter, Mail } from "lucide-react";
+import logo from "../../assets/logo.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -37,9 +39,10 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                DumpIt
-              </h3>
+              <div className="flex items-center gap-2 mb-2">
+                <img src={logo} alt="DumpIt Logo" className="w-8 h-8" />
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">DumpIt</span>
+              </div>
               <p className="text-sm text-gray-400 mt-2">
                 Your Personal Digital Vault
               </p>
