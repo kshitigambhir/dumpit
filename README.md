@@ -7,6 +7,7 @@ A modern, full-featured web application for saving, organizing, and sharing your
 ### Core Functionality
 - **🔐 User Authentication**: Secure sign up and login with Firebase Auth
 - **📚 Resource Management**: Create, read, update, and delete your resources
+- **🤖 AI-Powered Auto-Enrichment**: Automatically fetch titles, generate descriptions, and suggest tags from URLs
 - **🏷️ Tag Organization**: Categorize resources with predefined tags (Tutorial, Article, Video, Tool, etc.)
 - **🔍 Search & Filter**: Quickly find resources with search and tag filtering
 - **🌍 Public/Private Toggle**: Share resources publicly or keep them private
@@ -38,7 +39,12 @@ This project uses Firebase Auth and Firestore for runtime data.
    - VITE_FIREBASE_MESSAGING_SENDER_ID
    - VITE_FIREBASE_APP_ID
 
-5. Run the dev server:
+5. **Optional**: To enable AI-powered auto-enrichment, add Gemini API key:
+   - VITE_GEMINI_API_KEY (get from your Gemini provider / Google Cloud)
+   - VITE_GEMINI_MODEL (e.g. gemini-1.0)
+   - See [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md) for detailed instructions
+
+6. Run the dev server:
 
    ```bash
    npm install

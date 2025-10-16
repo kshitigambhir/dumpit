@@ -1,4 +1,25 @@
-export async function generateTitleDescription(url: string): Promise<{ title?: string; description?: string }> {
+export const PREDEFINED_TAGS = [
+  'Tutorial',
+  'Article',
+  'Video',
+  'Tool',
+  'Documentation',
+  'Course',
+  'GitHub',
+  'Design',
+  'Library',
+  'Other'
+];
+
+/**
+ * Suggests an appropriate tag based on the title, description, and URL
+ */
+
+
+// Gemini network calls are disabled. Import kept commented for future use.
+// import { generateGeminiSummary } from './gemini';
+
+export async function generateTitleDescription(url: string): Promise<{ title?: string; description?: string; suggestedTag?: string }> {
   // Try to fetch the page and extract <title> and meta description client-side.
   try {
     const res = await fetch(url, { method: 'GET', mode: 'cors' });
@@ -16,51 +37,20 @@ export async function generateTitleDescription(url: string): Promise<{ title?: s
       const description = (ogDesc?.content || metaDesc?.content || '').trim();
 
       if (title || description) {
+        console.log('✅ Metadata fetched via CORS:', { title, description });
         return { title: title || undefined, description: description || undefined };
       }
     } catch (err) {
       // parsing may fail in some environments; continue to fallback
+      console.log('⚠️ DOMParser failed, trying AI fallback');
     }
   } catch (err) {
     // Fetch may fail (CORS etc.) — we will attempt AI fallback below
+    console.log('⚠️ CORS blocked, trying AI fallback');
   }
 
-  // Fallback: use OpenAI (if API key present). This requires the repo maintainer to set VITE_OPENAI_API_KEY.
-  const key = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
-  if (!key) return {};
-
-  try {
-    const prompt = `You are a helpful assistant. Given only the URL: ${url}, produce a concise resource title (6-12 words) and a short description (1-2 sentences) suitable for a public resource listing. Return only a JSON object with keys \"title\" and \"description\`.\n`;
-
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'system', content: 'You are a concise metadata generator.' }, { role: 'user', content: prompt }],
-        temperature: 0.2,
-        max_tokens: 200,
-      }),
-    });
-
-    if (!openaiRes.ok) return {};
-    const body = await openaiRes.json();
-    const content = body?.choices?.[0]?.message?.content ?? '';
-
-    // Extract JSON blob from the response (model should return pure JSON per prompt)
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return {};
-
-    try {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return { title: parsed.title, description: parsed.description };
-    } catch (err) {
-      return {};
-    }
-  } catch (err) {
-    return {};
-  }
+  // Gemini AI fallback is currently disabled to avoid client-side network calls during development.
+  // If you need to re-enable Gemini, set VITE_GEMINI_API_KEY and restore the call to generateGeminiSummary.
+  console.log('⚠️ AI fallback disabled: no Gemini call will be made for', url);
+  return {};
 }
