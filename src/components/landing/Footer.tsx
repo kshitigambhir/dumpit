@@ -1,6 +1,7 @@
 
-import { Github, Twitter, Mail } from "lucide-react";
+import { Instagram, Linkedin } from "lucide-react";
 import logo from "../../assets/logo.png";
+import Link from "../ui/Link";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -9,25 +10,25 @@ const Footer = () => {
     {
       title: "Product",
       links: [
-        { label: "Features", href: "#features" },
-        { label: "Pricing", href: "#pricing" },
-        { label: "Updates", href: "#" },
+        { label: "Features", href: "#features", type: "anchor" },
+        { label: "Pricing", href: "#pricing", type: "anchor" },
+        { label: "Dashboard", href: "/dashboard", type: "route" },
       ],
     },
     {
       title: "Company",
       links: [
-        { label: "About", href: "#" },
-        { label: "Community", href: "#" },
-        { label: "Blog", href: "#" },
+        { label: "About", href: "#", type: "anchor" },
+        { label: "Community", href: "#", type: "anchor" },
+        { label: "Blog", href: "#", type: "anchor" },
       ],
     },
     {
       title: "Legal",
       links: [
-        { label: "Privacy Policy", href: "#" },
-        { label: "Terms of Service", href: "#" },
-        { label: "Cookie Policy", href: "#" },
+        { label: "Privacy Policy", href: "#", type: "anchor" },
+        { label: "Terms of Service", href: "#", type: "anchor" },
+        { label: "Cookie Policy", href: "#", type: "anchor" },
       ],
     },
   ];
@@ -49,25 +50,22 @@ const Footer = () => {
             </div>
             <div className="flex gap-4">
               <a
-                href="#"
+                href="https://instagram.com/rayan9064.tech"
                 className="w-10 h-10 rounded-lg bg-blue-950/50 border border-blue-700/50 backdrop-blur-xl flex items-center justify-center hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300"
-                aria-label="GitHub"
+                aria-label="Instagram"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <Github className="h-5 w-5" />
+                <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://linkedin.com/in/rayan9064"
                 className="w-10 h-10 rounded-lg bg-blue-950/50 border border-blue-700/50 backdrop-blur-xl flex items-center justify-center hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300"
-                aria-label="Twitter"
+                aria-label="LinkedIn"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-lg bg-blue-950/50 border border-blue-700/50 backdrop-blur-xl flex items-center justify-center hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all duration-300"
-                aria-label="Email"
-              >
-                <Mail className="h-5 w-5" />
+                <Linkedin className="h-5 w-5" />
               </a>
             </div>
           </div>
@@ -79,12 +77,19 @@ const Footer = () => {
               <ul className="space-y-2">
                 {section.links.map((link, linkIndex) => (
                   <li key={linkIndex}>
-                    <a
-                      href={link.href}
-                      className="text-gray-400 hover:text-white transition-colors duration-300"
-                    >
-                      {link.label}
-                    </a>
+                    {link.type === "route" ? (
+                      <Link to={link.href} className="text-gray-400 hover:text-white transition-colors duration-300">
+                        {link.label}
+                      </Link>
+                    ) : link.type === "external" ? (
+                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-300">
+                        {link.label}
+                      </a>
+                    ) : (
+                      <a href={link.href} className="text-gray-400 hover:text-white transition-colors duration-300">
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
