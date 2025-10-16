@@ -1,5 +1,7 @@
+
 import { Button } from "../ui/button";
 import { ArrowRight } from "lucide-react";
+import logoWithText from "../../assets/logo with text.png";
 
 const Hero = () => {
   return (
@@ -14,48 +16,50 @@ const Hero = () => {
       <div className="container mx-auto px-6 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left content */}
-          <div className="text-center lg:text-left space-y-8 animate-fade-in-up">
-            <div className="inline-block">
-              <span className="px-4 py-2 bg-blue-950/50 border border-blue-700/50 backdrop-blur-xl rounded-full text-sm font-medium text-blue-200">
-                Your Personal Digital Vault
-              </span>
-            </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-              Your Digital Memory.{" "}
-              <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                Organized.
-              </span>
-            </h1>
-
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto lg:mx-0">
-              All your links, notes, and snapshots of inspiration—secure, searchable,
-              and always in sync. Welcome to smarter personal storage.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button variant="hero" size="lg" className="group">
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button variant="glass" size="lg">
-                See How It Works
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-8 justify-center lg:justify-start text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 border-2 border-slate-900" />
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 border-2 border-slate-900" />
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-800 border-2 border-slate-900" />
+          <div className="flex flex-col justify-center h-full animate-fade-in-up">
+            <div className="flex flex-col space-y-6 text-center lg:text-left">
+              <div className="inline-block mb-2">
+                <span className="px-4 py-2 bg-blue-950/50 border border-blue-700/50 backdrop-blur-xl rounded-full text-sm font-medium text-blue-200">
+                  Your Personal Digital Vault
+                </span>
+              </div>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-4">
+                <img src={logoWithText} alt="DumpIt Logo" className="w-32 h-auto inline-block mb-2 lg:mb-0" />
+                <span>
+                  Your Digital Memory.{" "}
+                  <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+                    Organized.
+                  </span>
+                </span>
+              </h1>
+                <p className="text-xl text-gray-300 max-w-2xl mx-auto lg:mx-0">
+                  All your links, notes, and snapshots of inspiration—secure, searchable,
+                  and always in sync. Welcome to smarter personal storage.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <Button variant="hero" size="lg" className="group">
+                    Get Started Free
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                  <Button variant="glass" size="lg">
+                    See How It Works
+                  </Button>
                 </div>
-                <span>Join 10,000+ users</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-yellow-400">★★★★★</span>
-                <span>4.9/5 rating</span>
-              </div>
+                <div className="flex items-center gap-8 justify-center lg:justify-start text-sm text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 border-2 border-slate-900" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-700 border-2 border-slate-900" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-800 border-2 border-slate-900" />
+                    </div>
+                    <span>Join 10,000+ users</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-yellow-400">★★★★★</span>
+                    <span>4.9/5 rating</span>
+                  </div>
+                </div>
             </div>
           </div>
 
