@@ -1,6 +1,7 @@
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Check } from "lucide-react";
+import Link from "../ui/Link";
 
 const plans = [
   {
@@ -90,13 +91,27 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <Button
-                variant={plan.popular ? "hero" : "glass"}
-                className="w-full"
-                size="lg"
-              >
-                {plan.cta}
-              </Button>
+              {plan.name === "Free" ? (
+                <Link to="/dashboard" tabIndex={-1} className="contents">
+                  <Button
+                    variant={plan.popular ? "hero" : "glass"}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {plan.cta}
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant={plan.popular ? "hero" : "glass"}
+                  className="w-full"
+                  size="lg"
+                  disabled
+                  tabIndex={-1}
+                >
+                  {plan.cta}
+                </Button>
+              )}
             </Card>
           ))}
         </div>
