@@ -1,9 +1,10 @@
 import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
-import { CheckCircle, Loader2, Plus } from 'lucide-react';
+import { CheckCircle, Loader2, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { generateTitleDescription } from '../lib/ai';
+import { useUrlEnrichment } from '../hooks/useUrlEnrichment';
+import { MetadataPreviewCard } from './ui/MetadataPreviewCard';
 
 const PREDEFINED_TAGS = [
   'Tutorial',
@@ -40,7 +41,10 @@ export function AddResource({ onSuccess }: AddResourceProps) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [autoLoading, setAutoLoading] = useState(false);
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
+  const [metadata, _setMetadata] = useState<any>(null);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const { loading: enriching, error: enrichError } = useUrlEnrichment();
 
   useEffect(() => {
     if (user) {
@@ -99,17 +103,19 @@ export function AddResource({ onSuccess }: AddResourceProps) {
     setLoading(false);
   };
 
-  const handleAutofill = async () => {
-    if (!link) return;
-    setAutoLoading(true);
+  const handleEnrichUrl = async (_urlValue: string) => {
+    // AI enrichment is disabled on the client to avoid Gemini network calls.
+    // Show a Coming Soon popup instead of making network requests.
+    setShowComingSoon(true);
+  };
+
+  const isValidUrl = (url: string): boolean => {
     try {
-      const result = await generateTitleDescription(link);
-      if (result.title) setTitle((prev) => (prev ? prev : result.title!));
-      if (result.description) setNote((prev) => (prev ? prev : result.description!));
-    } catch (err) {
-      // ignore
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
     }
-    setAutoLoading(false);
   };
 
   return (
@@ -145,31 +151,95 @@ export function AddResource({ onSuccess }: AddResourceProps) {
                 id="link"
                 type="url"
                 value={link}
-                onChange={(e) => setLink(e.target.value)}
-                placeholder="https://example.com"
+                onChange={(e) => {
+                  const newLink = e.target.value;
+                  setLink(newLink);
+                }}
+                onBlur={(e) => {
+                  const newLink = e.target.value;
+                  if (newLink && isValidUrl(newLink)) {
+                    handleEnrichUrl(newLink);
+                  }
+                }}
+                placeholder="https://example.com (paste to auto-fill)"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 required
               />
               <button
                 type="button"
-                onClick={handleAutofill}
-                disabled={autoLoading}
-                className="inline-flex items-center gap-2 bg-gray-100 px-3 rounded-md border border-gray-200 text-sm"
+                onClick={() => setShowComingSoon(true)}
+                className="inline-flex items-center gap-2 bg-gray-100 px-3 rounded-md border border-gray-200 text-sm hover:bg-gray-200 transition-colors"
+                title="AI Auto-fill (Coming Soon)"
               >
-                {autoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Autofill'}
+                <Sparkles className="w-4 h-4" />
               </button>
             </div>
+            {enriching && (
+              <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Fetching page details and generating summary...
+              </div>
+            )}
+            {enrichError && (
+              <p className="text-sm text-red-600 mt-1">{enrichError}</p>
+            )}
           </div>
 
+          {/* Metadata Preview Card */}
+          {metadata && (
+            <MetadataPreviewCard metadata={metadata} url={link} />
+          )}
+
+          {showComingSoon && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+                <h3 className="text-lg font-bold mb-3">AI Auto-Enrichment — Coming Soon</h3>
+                <p className="text-gray-700 mb-3">We'll automatically fetch page metadata and generate intelligent summaries and tags for you. This will:</p>
+                <ul className="list-disc list-inside text-gray-700 mb-4">
+                  <li>Save time by auto-filling title & description.</li>
+                  <li>Provide concise, consistent summaries for better discovery.</li>
+                  <li>Suggest relevant tags to improve organization.</li>
+                </ul>
+                <div className="flex justify-end">
+                  <button onClick={() => setShowComingSoon(false)} className="bg-blue-600 text-white py-2 px-4 rounded-lg">Got it</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
-            <label htmlFor="note" className="block text-sm font-semibold text-gray-700 mb-2">
-              Note (optional)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="note" className="block text-sm font-semibold text-gray-700">
+                Note (optional)
+                {isAiGenerated && (
+                  <span className="inline-flex items-center gap-1 text-xs text-purple-600 ml-2 font-normal">
+                    <Sparkles className="w-3 h-3" />
+                    AI-generated
+                  </span>
+                )}
+              </label>
+              {isAiGenerated && link && (
+                <button
+                  type="button"
+                  onClick={() => setShowComingSoon(true)}
+                  className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 font-medium transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Regenerate (Coming Soon)
+                </button>
+              )}
+            </div>
             <textarea
               id="note"
               value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Add a description or note about this resource..."
+              onChange={(e) => {
+                setNote(e.target.value);
+                // Mark as manually edited if user changes AI-generated content
+                if (isAiGenerated) {
+                  setIsAiGenerated(false);
+                }
+              }}
+              placeholder="AI will generate a summary when you add a link, or write your own..."
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
             />
