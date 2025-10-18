@@ -1,3 +1,5 @@
+'use client'
+
 import { addDoc, collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { CheckCircle, ExternalLink, Filter, Loader2, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';

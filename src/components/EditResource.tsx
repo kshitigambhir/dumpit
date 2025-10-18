@@ -1,3 +1,5 @@
+'use client'
+
 import { doc, updateDoc } from 'firebase/firestore';
 import { CheckCircle, Loader2, Save, X } from 'lucide-react';
 import { useState } from 'react';

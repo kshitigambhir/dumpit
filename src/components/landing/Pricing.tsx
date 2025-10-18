@@ -92,7 +92,7 @@ const Pricing = () => {
               </ul>
 
               {plan.name === "Free" ? (
-                <Link to="/dashboard" tabIndex={-1} className="contents">
+                <Link href="/dashboard" tabIndex={-1} className="contents">
                   <Button
                     variant={plan.popular ? "hero" : "glass"}
                     className="w-full"

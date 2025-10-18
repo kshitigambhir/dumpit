@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Auth } from '../components/Auth';
@@ -22,10 +24,12 @@ const DashboardPage = () => {
     );
   }
 
+  // If not authenticated, show Auth component
   if (!user) {
     return <Auth />;
   }
 
+  // User is authenticated, show dashboard
   return (
     <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
       {currentPage === 'dashboard' && <Dashboard />}

@@ -1,3 +1,5 @@
+'use client'
+
 import Hero from "../components/landing/Hero";
 import Vision from "../components/landing/Vision";
 import Features from "../components/landing/Features";
