@@ -1,6 +1,6 @@
 # DumpIt - Personal Resource Vault
 
-A modern, full-featured web application for saving, organizing, and sharing your valuable links and resources. Built with React, TypeScript, Tailwind CSS, and Firebase.
+A modern, full-featured web application for saving, organizing, and sharing your valuable links and resources. Built with Next.js 14, TypeScript, Tailwind CSS, and Firebase.
 
 ## ✨ Features
 
@@ -23,42 +23,88 @@ A modern, full-featured web application for saving, organizing, and sharing your
 - **Success Notifications**: Visual confirmation of actions
 
 
-## Backend / Local setup (Firebase)
+## 🚀 Quick Start (Next.js + Firebase)
 
-This project uses Firebase Auth and Firestore for runtime data.
+This project uses Next.js 14 with App Router and Firebase for authentication and database.
 
-1. Create a Firebase project at https://console.firebase.google.com/
-2. Enable Email/Password authentication in the Authentication settings
-3. Create a Firestore database (start in test mode for local development)
-4. Add the following environment variables to `.env` or to your deployment platform:
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Firebase project
 
-   - VITE_FIREBASE_API_KEY
-   - VITE_FIREBASE_AUTH_DOMAIN
-   - VITE_FIREBASE_PROJECT_ID
-   - VITE_FIREBASE_STORAGE_BUCKET
-   - VITE_FIREBASE_MESSAGING_SENDER_ID
-   - VITE_FIREBASE_APP_ID
+### Setup Steps
 
-5. **Optional**: To enable AI-powered auto-enrichment, add Gemini API key:
-   - VITE_GEMINI_API_KEY (get from your Gemini provider / Google Cloud)
-   - VITE_GEMINI_MODEL (e.g. gemini-1.0)
-   - See [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md) for detailed instructions
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Rayan9064/dumpit.git
+   cd dumpit
+   ```
 
-6. Run the dev server:
-
+2. **Install dependencies**
    ```bash
    npm install
+   ```
+
+3. **Set up Firebase**
+   - Create a Firebase project at https://console.firebase.google.com/
+   - Enable Email/Password authentication in the Authentication settings
+   - Create a Firestore database (start in test mode for local development)
+
+4. **Configure environment variables**
+   
+   Create a `.env.local` file in the root directory and add your Firebase configuration:
+   ```env
+   # Firebase Client Configuration (public - exposed to browser)
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+   # Firebase Admin SDK (server-side only - keep secure)
+   FIREBASE_PROJECT_ID=your_project_id
+   FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+   FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
+
+   # Optional: AI-powered auto-enrichment
+   GEMINI_API_KEY=your-gemini-api-key
+   GEMINI_MODEL=gemini-2.0-flash-exp
+   ```
+
+5. **Run the development server**
+   ```bash
    npm run dev
    ```
 
-For detailed setup steps, see [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
+6. **Open your browser**
+   - Navigate to `http://localhost:3000`
+   - Create an account and start saving resources!
+
+## 🚀 Deployment
+
+This Next.js application can be deployed to any platform that supports Node.js:
+
+### Vercel (Recommended)
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy automatically on git push
+
+### Other Platforms
+- **Netlify**: Use `npm run build` and deploy the `.next` folder
+- **Railway**: Connect repository and set environment variables
+- **Render**: Use the Node.js runtime with build command `npm run build`
+
+### Environment Variables for Production
+Ensure all environment variables are set in your deployment platform:
+- `NEXT_PUBLIC_FIREBASE_*` variables for client-side Firebase config
+- `FIREBASE_*` variables for server-side Admin SDK
+- `GEMINI_*` variables for AI features (optional)
+
+For detailed Firebase setup steps, see [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
 
 ### Migration Note
 Supabase files have been removed from the codebase as part of the migration to Firebase. If you see any references to Supabase, please open an issue.
-
-6. **Open your browser**
-   - Navigate to `http://localhost:5173`
-   - Create an account and start saving resources!
 
 ## 📖 Usage
 
@@ -89,40 +135,45 @@ Supabase files have been removed from the codebase as part of the migration to F
 
 ## 🛠️ Tech Stack
 
-- **Frontend Framework**: React 18
+- **Framework**: Next.js 14 (App Router)
+- **Frontend**: React 18
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
-- **Backend**: Firebase (Auth + Firestore)
-- **Build Tool**: Vite
+- **Backend**: Firebase (Auth + Firestore + Admin SDK)
+- **Build Tool**: Next.js (built-in)
 - **Linting**: ESLint
 
-## 📁 Project Structure
+## 🏗️ Architecture
 
-```
-dumpit/
-├── src/
-│   ├── components/
-│   │   ├── Auth.tsx           # Authentication UI
-│   │   ├── Dashboard.tsx      # User's resource dashboard
-│   │   ├── AddResource.tsx    # Form to add new resources
-│   │   ├── EditResource.tsx   # Modal to edit resources
-│   │   ├── SharedDump.tsx     # Public resources feed
-│   │   ├── Profile.tsx        # User profile & settings
-│   │   └── Layout.tsx         # App layout with navigation
-│   ├── contexts/
-│   │   └── AuthContext.tsx    # Authentication context
-│   ├── lib/
-│   │   └── firebase.ts        # Firebase client & helpers
-│   ├── App.tsx                # Main app component
-│   ├── main.tsx               # Entry point
-│   └── index.css              # Global styles
- 
-│   └── migrations/            # Database schema migrations
-└── public/                    # Static assets
-```
+This application uses **Next.js 14 with App Router** for a modern, full-stack React experience:
+
+### Frontend Features
+- **App Router**: File-based routing with nested layouts
+- **Server Components**: Optimized performance with selective client components
+- **TypeScript**: Full type safety throughout the application
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+
+### Backend Features (API Routes)
+- **Server-Side API Routes**: Secure database operations with Firebase Admin SDK
+- **Username Validation**: Server-side uniqueness checking
+- **Resource Management**: Full CRUD operations via RESTful API
+- **User Profile Management**: Secure profile updates and statistics
+- **Public Resource Discovery**: Optimized queries for community features
+
+### Security Features
+- **Client-Side Auth**: Firebase Auth for user authentication
+- **Server-Side Validation**: All database operations validated server-side
+- **Secure API Keys**: Environment variables properly scoped (NEXT_PUBLIC_ for client, server-only for sensitive data)
+- **Input Sanitization**: Server-side validation for all user inputs
 
 ## 🔄 Recent Updates
+
+### v1.2.0 - Security & API Migration
+- ✅ **Migrated to Secure API Routes**: Moved all Firestore operations from client-side to secure server-side API routes
+- ✅ **Firebase Admin SDK Integration**: Server-side database access with proper authentication
+- ✅ **User-Friendly Error Messages**: Replaced technical Firebase errors with clear, actionable messages
+- ✅ **Enhanced Security**: No direct client database access, all operations validated server-side
 
 ### v1.1.0 - Edit Resource Feature
 - ✅ Added ability to edit existing resources
@@ -152,8 +203,8 @@ This project is open source and available under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- Built with [Vite](https://vitejs.dev/)
- 
+- Built with [Next.js](https://nextjs.org/)
 - Styled with [Tailwind CSS](https://tailwindcss.com/)
 - Icons from [Lucide](https://lucide.dev/)
+- Authentication & Database by [Firebase](https://firebase.google.com/)
 
