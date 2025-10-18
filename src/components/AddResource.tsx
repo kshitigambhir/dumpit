@@ -1,10 +1,8 @@
 'use client'
 
-import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
 import { CheckCircle, Loader2, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
 import { useUrlEnrichment } from '../hooks/useUrlEnrichment';
 import { MetadataPreviewCard } from './ui/MetadataPreviewCard';
 
@@ -55,13 +53,19 @@ export function AddResource({ onSuccess }: AddResourceProps) {
   }, [user]);
 
   const loadUserProfile = async () => {
-    const docRef = doc(db, 'users', user!.uid);
-    const docSnap = await getDoc(docRef);
+    try {
+      const response = await fetch(`/api/user-profile?uid=${user!.uid}`);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data() as UserProfile;
-      setUserProfile(data);
-      setIsPublic(data.share_by_default);
+      if (!response.ok) {
+        throw new Error('Failed to load user profile');
+      }
+
+      const data = await response.json();
+      const profileData = data.profile;
+      setUserProfile(profileData);
+      setIsPublic(Boolean(profileData.share_by_default));
+    } catch (error) {
+      console.error('Error loading user profile:', error);
     }
   };
 
@@ -78,15 +82,24 @@ export function AddResource({ onSuccess }: AddResourceProps) {
     }
 
     try {
-      await addDoc(collection(db, 'resources'), {
-        user_id: user!.uid,
-        title,
-        link,
-        note: note.trim() || null,
-        tag,
-        is_public: isPublic,
-        created_at: new Date(),
+      const response = await fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user!.uid,
+          title,
+          link,
+          note: note.trim() || null,
+          tag,
+          is_public: isPublic,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add resource');
+      }
+
       setSuccess(true);
       setTitle('');
       setLink('');
@@ -98,8 +111,8 @@ export function AddResource({ onSuccess }: AddResourceProps) {
         setSuccess(false);
         onSuccess();
       }, 1500);
-    } catch (error) {
-      setError('Failed to add resource. Please try again.');
+    } catch (error: any) {
+      setError(error.message || 'Failed to add resource. Please try again.');
     }
 
     setLoading(false);

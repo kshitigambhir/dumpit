@@ -1,10 +1,8 @@
 'use client'
 
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { CheckCircle, Globe, Loader2, Lock, Save, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
 
 interface UserProfile {
   id: string;
@@ -36,24 +34,39 @@ export function Profile() {
 
   const loadProfile = async () => {
     setLoading(true);
-    const docRef = doc(db, 'users', user!.uid);
-    const docSnap = await getDoc(docRef);
+    try {
+      const response = await fetch(`/api/user-profile?uid=${user!.uid}`);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data() as UserProfile;
-      setProfile(data);
-      setUsername(data.username);
-      setShareByDefault(Boolean(data.share_by_default));
+      if (!response.ok) {
+        throw new Error('Failed to load profile');
+      }
+
+      const data = await response.json();
+      const profileData = data.profile;
+      setProfile(profileData);
+      setUsername(profileData.username);
+      setShareByDefault(Boolean(profileData.share_by_default));
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      setError('Failed to load profile');
     }
     setLoading(false);
   };
 
   const loadStats = async () => {
-    const q = query(collection(db, 'resources'), where('user_id', '==', user!.uid));
-    const querySnapshot = await getDocs(q);
-    const allResources = querySnapshot.docs.map(doc => doc.data());
-    const publicCount = allResources.filter((r: any) => r.is_public).length;
-    setStats({ total: allResources.length, public: publicCount, private: allResources.length - publicCount });
+    try {
+      const response = await fetch(`/api/user-profile?uid=${user!.uid}&type=stats`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load stats');
+      }
+
+      const data = await response.json();
+      setStats(data.stats);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      // Don't set error for stats, just log it
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,13 +82,25 @@ export function Profile() {
     }
 
     try {
-      const docRef = doc(db, 'users', user!.uid);
-      await updateDoc(docRef, { username: username.trim(), share_by_default: shareByDefault });
+      const response = await fetch('/api/user-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user!.uid,
+          username: username.trim(),
+          share_by_default: shareByDefault,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error: any) {
-      if (error.code === 'permission-denied') setError('Permission denied');
-      else setError('Failed to update profile');
+      setError(error.message || 'Failed to update profile');
     }
 
     setSaving(false);

@@ -1,10 +1,8 @@
 'use client'
 
-import { addDoc, collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { CheckCircle, ExternalLink, Filter, Loader2, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
 
 // Helper function to safely format dates
 function formatDate(dateValue: any): string {
@@ -59,54 +57,38 @@ export function SharedDump() {
   const loadPublicResources = async () => {
     setLoading(true);
     try {
-      // Try the optimal query first (requires the composite index)
-      const q = query(
-        collection(db, 'resources'), 
-        where('is_public', '==', true), 
-        where('user_id', '!=', user!.uid), 
-        orderBy('user_id'), 
-        orderBy('created_at', 'desc')
-      );
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
-      setResources(data);
-      const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
+      const response = await fetch(`/api/public-resources?userId=${user!.uid}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load public resources');
+      }
+
+      const data = await response.json();
+      const resourcesData = data.resources as Resource[];
+      setResources(resourcesData);
+      const uniqueTags = Array.from(new Set(resourcesData.map(r => r.tag)));
       setTags(uniqueTags);
     } catch (error) {
-      console.log("Index not ready yet, using fallback query");
-      
-      // Fallback query: Get all public resources and filter client-side
-      const fallbackQuery = query(
-        collection(db, 'resources'),
-        where('is_public', '==', true)
-      );
-      
-      const querySnapshot = await getDocs(fallbackQuery);
-      
-      // Filter out the current user's resources and sort manually
-      const allData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
-      const filteredData = allData.filter(item => item.user_id !== user!.uid);
-      
-      // Manual sorting by created_at in descending order
-      filteredData.sort((a, b) => {
-        const dateA = a.created_at instanceof Date ? a.created_at : new Date(a.created_at);
-        const dateB = b.created_at instanceof Date ? b.created_at : new Date(b.created_at);
-        return dateB.getTime() - dateA.getTime();
-      });
-      
-      setResources(filteredData);
-      const uniqueTags = Array.from(new Set(filteredData.map(r => r.tag)));
-      setTags(uniqueTags);
+      console.error('Error loading public resources:', error);
     }
     setLoading(false);
   };
 
   const loadUserResources = async () => {
-    const q = query(collection(db, 'resources'), where('user_id', '==', user!.uid));
-    const querySnapshot = await getDocs(q);
-    const data = querySnapshot.docs.map(doc => doc.data());
-    const links = new Set(data.map((r: any) => r.link));
-    setSavedResources(links);
+    try {
+      const response = await fetch(`/api/resources?uid=${user!.uid}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load user resources');
+      }
+
+      const data = await response.json();
+      const userResources = data.resources as Resource[];
+      const links = new Set(userResources.map(r => r.link));
+      setSavedResources(links);
+    } catch (error) {
+      console.error('Error loading user resources:', error);
+    }
   };
 
   const filterResources = () => {
@@ -133,18 +115,23 @@ export function SharedDump() {
     setSavingId(resource.id);
 
     try {
-      await addDoc(collection(db, 'resources'), {
-        user_id: user!.uid,
-        title: resource.title,
-        link: resource.link,
-        note: resource.note,
-        tag: resource.tag,
-        is_public: false,
-        created_at: new Date(),
+      const response = await fetch('/api/public-resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user!.uid,
+          resourceId: resource.id,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save resource');
+      }
+
       setSavedResources(new Set([...savedResources, resource.link]));
     } catch (error) {
-      // handle error
+      console.error('Error saving resource:', error);
     }
 
     setSavingId(null);
