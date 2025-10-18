@@ -3,6 +3,8 @@
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,7 +14,67 @@ export function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const { signIn, signUp, signInWithGoogle } = useAuth();
+
+  // Username validation regex: 3-20 characters, lowercase, numbers, underscores, hyphens
+  const usernameRegex = /^[a-z0-9_-]{3,20}$/;
+
+  const validateUsernameFormat = (username: string): boolean => {
+    return usernameRegex.test(username);
+  };
+
+  const checkUsernameUniqueness = async (username: string): Promise<boolean> => {
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('username', '==', username));
+      const snapshot = await getDocs(q);
+      return snapshot.empty; // true if available, false if taken
+    } catch (error) {
+      console.error('Error checking username uniqueness:', error);
+      return false; // Assume taken on error
+    }
+  };
+
+  const generateUsernameSuggestions = (baseUsername: string): string[] => {
+    const suggestions: string[] = [];
+    const cleanBase = baseUsername.replace(/[^a-z0-9_-]/g, '').toLowerCase();
+
+    // Add numbers
+    for (let i = 1; i <= 5; i++) {
+      suggestions.push(`${cleanBase}${i}`);
+    }
+
+    // Add underscores with numbers
+    for (let i = 1; i <= 3; i++) {
+      suggestions.push(`${cleanBase}_${i}`);
+    }
+
+    return suggestions.slice(0, 5); // Return first 5 suggestions
+  };
+
+  const handleUsernameChange = async (value: string) => {
+    setUsername(value);
+    setUsernameError('');
+    setUsernameSuggestions([]);
+
+    if (value.trim() === '') return;
+
+    // Check format
+    if (!validateUsernameFormat(value)) {
+      setUsernameError('Username must be 3-20 characters, lowercase letters, numbers, underscores, or hyphens only.');
+      return;
+    }
+
+    // Check uniqueness
+    const isAvailable = await checkUsernameUniqueness(value);
+    if (!isAvailable) {
+      setUsernameError('This username is already taken.');
+      const suggestions = generateUsernameSuggestions(value);
+      setUsernameSuggestions(suggestions);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,11 +90,26 @@ export function Auth() {
         }
         // Success - auth state change will trigger navigation
       } else {
+        // Validate username for signup
         if (!username.trim()) {
           setError('Username is required');
           setLoading(false);
           return;
         }
+
+        if (!validateUsernameFormat(username)) {
+          setError('Username must be 3-20 characters, lowercase letters, numbers, underscores, or hyphens only.');
+          setLoading(false);
+          return;
+        }
+
+        const isAvailable = await checkUsernameUniqueness(username);
+        if (!isAvailable) {
+          setError('This username is already taken. Please choose a different one.');
+          setLoading(false);
+          return;
+        }
+
         const { error } = await signUp(email, password, username);
         if (error) {
           setError(error.message);
@@ -112,11 +189,33 @@ export function Auth() {
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+                    usernameError ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="johndoe"
                   required={!isLogin}
                 />
+                {usernameError && (
+                  <p className="mt-1 text-sm text-red-600">{usernameError}</p>
+                )}
+                {usernameSuggestions.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600 mb-1">Try these instead:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {usernameSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => handleUsernameChange(suggestion)}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
