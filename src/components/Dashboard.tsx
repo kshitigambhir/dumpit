@@ -1,10 +1,8 @@
 'use client'
 
-import { collection, deleteDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { Edit, ExternalLink, Filter, Globe, Loader2, Lock, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase';
 import { EditResource } from './EditResource';
 
 // Helper function to safely format dates
@@ -59,12 +57,21 @@ export function Dashboard() {
 
   const loadResources = async () => {
     setLoading(true);
-    const q = query(collection(db, 'resources'), where('user_id', '==', user!.uid), orderBy('created_at', 'desc'));
-    const querySnapshot = await getDocs(q);
-    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Resource[];
-    setResources(data);
-    const uniqueTags = Array.from(new Set(data.map(r => r.tag)));
-    setTags(uniqueTags);
+    try {
+      const response = await fetch(`/api/resources?uid=${user!.uid}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to load resources');
+      }
+
+      const data = await response.json();
+      const resourcesData = data.resources as Resource[];
+      setResources(resourcesData);
+      const uniqueTags = Array.from(new Set(resourcesData.map(r => r.tag)));
+      setTags(uniqueTags);
+    } catch (error) {
+      console.error('Error loading resources:', error);
+    }
     setLoading(false);
   };
 
@@ -92,10 +99,17 @@ export function Dashboard() {
     if (!confirm('Are you sure you want to delete this resource?')) return;
 
     try {
-      await deleteDoc(doc(db, 'resources', id));
+      const response = await fetch(`/api/resources?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete resource');
+      }
+
       loadResources();
     } catch (error) {
-      // handle error
+      console.error('Error deleting resource:', error);
     }
   };
 

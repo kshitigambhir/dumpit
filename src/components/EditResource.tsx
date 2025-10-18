@@ -1,9 +1,7 @@
 'use client'
 
-import { doc, updateDoc } from 'firebase/firestore';
 import { CheckCircle, Loader2, Save, X } from 'lucide-react';
 import { useState } from 'react';
-import { db } from '../lib/firebase';
 
 const PREDEFINED_TAGS = [
   'Tutorial',
@@ -57,21 +55,31 @@ export function EditResource({ resource, onSuccess, onCancel }: EditResourceProp
       return;
     }
     try {
-      const docRef = doc(db, 'resources', resource.id);
-      await updateDoc(docRef, {
-        title,
-        link,
-        note: note.trim() || null,
-        tag,
-        is_public: isPublic,
+      const response = await fetch('/api/resources', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: resource.id,
+          title,
+          link,
+          note: note.trim() || null,
+          tag,
+          is_public: isPublic,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update resource');
+      }
+
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
         onSuccess();
       }, 1000);
-    } catch (error) {
-      setError('Failed to update resource. Please try again.');
+    } catch (error: any) {
+      setError(error.message || 'Failed to update resource. Please try again.');
     }
     setLoading(false);
   };

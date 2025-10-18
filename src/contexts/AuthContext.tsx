@@ -10,9 +10,8 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup
 } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { auth, db } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -43,15 +42,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create user profile in Firestore (using 'users' collection to match Profile component)
-      await setDoc(doc(db, 'users', user.uid), {
-        id: user.uid,
-        username,
-        email,
-        share_by_default: false,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
+      // Create user profile via secure API route
+      const response = await fetch('/api/user-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          username,
+          email,
+          share_by_default: false,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create user profile');
+      }
 
       console.log('User profile created successfully');
       return { error: null };
@@ -79,40 +85,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
-      
+
       // Check if this is a new user
       const additionalUserInfo = getAdditionalUserInfo(userCredential);
       const isNewUser = additionalUserInfo?.isNewUser;
-      
+
       if (isNewUser) {
-        // Create user profile in Firestore for new Google users
-        await setDoc(doc(db, 'users', user.uid), {
-          id: user.uid,
-          username: user.displayName || user.email?.split('@')[0] || 'User',
-          email: user.email,
-          share_by_default: false,
-          created_at: serverTimestamp(),
-          updated_at: serverTimestamp(),
-        });
-        console.log('Google user profile created successfully');
-      } else {
-        // Check if user has a profile already (for existing Google accounts)
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
-        if (!userDoc.exists()) {
-          // Create profile if it doesn't exist yet (edge case)
-          await setDoc(doc(db, 'users', user.uid), {
-            id: user.uid,
+        // Create user profile via secure API route for new Google users
+        const response = await fetch('/api/user-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: user.uid,
             username: user.displayName || user.email?.split('@')[0] || 'User',
             email: user.email,
             share_by_default: false,
-            created_at: serverTimestamp(),
-            updated_at: serverTimestamp(),
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create user profile');
+        }
+
+        console.log('Google user profile created successfully');
+      } else {
+        // Check if user has a profile already (for existing Google accounts)
+        const response = await fetch(`/api/user-profile?uid=${user.uid}`);
+
+        if (!response.ok) {
+          // Create profile if it doesn't exist yet (edge case)
+          const createResponse = await fetch('/api/user-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              uid: user.uid,
+              username: user.displayName || user.email?.split('@')[0] || 'User',
+              email: user.email,
+              share_by_default: false,
+            }),
           });
+
+          if (!createResponse.ok) {
+            const errorData = await createResponse.json();
+            throw new Error(errorData.error || 'Failed to create user profile');
+          }
+
           console.log('Google user profile created for existing user');
         }
       }
-      
+
       return { error: null };
     } catch (error) {
       console.error('Google sign-in error:', error);
