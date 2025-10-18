@@ -1,7 +1,6 @@
 
 import { Button } from "../ui/button";
 import { ArrowRight } from "lucide-react";
-import logoWithText from "../../assets/logo with text.png";
 import Link from "../ui/Link";
 
 const Hero = () => {
@@ -26,7 +25,7 @@ const Hero = () => {
                 </span>
               </div>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-4">
-                <img src={logoWithText} alt="DumpIt Logo" className="w-32 h-auto inline-block mb-2 lg:mb-0" />
+                <img src="/logo-with-text.png" alt="DumpIt Logo" className="w-32 h-auto inline-block mb-2 lg:mb-0" />
                 <span>
                   Your Digital Memory.{" "}
                   <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
@@ -39,7 +38,7 @@ const Hero = () => {
                   and always in sync. Welcome to smarter personal storage.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Link to="/dashboard" tabIndex={-1} className="contents">
+                  <Link href="/dashboard" tabIndex={-1} className="contents">
                     <Button variant="hero" size="lg" className="group">
                       Get Started Free
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

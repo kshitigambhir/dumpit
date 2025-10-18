@@ -1,6 +1,7 @@
+'use client'
+
 import { LayoutDashboard, LogOut, Plus, Share2, User } from 'lucide-react';
 import { ReactNode } from 'react';
-import logoImage from '../assets/logo.png';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
@@ -26,7 +27,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
-                <img src={logoImage} alt="DumpIt Logo" className="w-full h-full object-contain" />
+                <img src="/logo.png" alt="DumpIt Logo" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                 DumpIt

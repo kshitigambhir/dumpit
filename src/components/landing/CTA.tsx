@@ -1,8 +1,24 @@
+'use client'
+
 import { Button } from "../ui/button";
 import { ArrowRight } from "lucide-react";
-import Link from "../ui/Link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../contexts/AuthContext";
 
 const CTA = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const handleGetStarted = () => {
+    if (user) {
+      // If authenticated, go directly to dashboard
+      router.push('/dashboard');
+    } else {
+      // If not authenticated, go to login page
+      router.push('/login');
+    }
+  };
+
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background effects */}
@@ -23,12 +39,15 @@ const CTA = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Link to="/dashboard" tabIndex={-1} className="contents">
-              <Button variant="hero" size="lg" className="group">
-                Start Dumping Smarter
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
+            <Button
+              variant="hero"
+              size="lg"
+              className="group"
+              onClick={handleGetStarted}
+            >
+              Start Dumping Smarter
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
             <Button variant="glass" size="lg" disabled tabIndex={-1}>
               View Documentation
             </Button>

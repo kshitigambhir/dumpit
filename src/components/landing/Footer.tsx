@@ -1,10 +1,10 @@
 
 import { Instagram, Linkedin } from "lucide-react";
-import logo from "../../assets/logo.png";
 import Link from "../ui/Link";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+
 
   const footerLinks = [
     {
@@ -41,7 +41,7 @@ const Footer = () => {
           <div className="col-span-2 md:col-span-1">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <img src={logo} alt="DumpIt Logo" className="w-8 h-8" />
+                <img src="/logo.png" alt="DumpIt Logo" className="w-8 h-8" />
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">DumpIt</span>
               </div>
               <p className="text-sm text-gray-400 mt-2">
@@ -78,7 +78,7 @@ const Footer = () => {
                 {section.links.map((link, linkIndex) => (
                   <li key={linkIndex}>
                     {link.type === "route" ? (
-                      <Link to={link.href} className="text-gray-400 hover:text-white transition-colors duration-300">
+                      <Link href={link.href} className="text-gray-400 hover:text-white transition-colors duration-300">
                         {link.label}
                       </Link>
                     ) : link.type === "external" ? (

@@ -1,6 +1,5 @@
 
 import { Globe, Smartphone, MessageSquare, Folder } from "lucide-react";
-import logoWithText from "../../assets/logo with text.png";
 
 const Vision = () => {
   const sources = [
@@ -56,7 +55,7 @@ const Vision = () => {
               {/* DumpIt logo/vault */}
               <div className="relative animate-scale-in" style={{ animationDelay: "0.5s" }}>
                 <div className="w-32 h-32 rounded-2xl bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center animate-glow-pulse">
-                  <img src={logoWithText} alt="DumpIt Logo" className="w-24 h-auto object-contain" />
+                  <img src="/logo-with-text.png" alt="DumpIt Logo" className="w-24 h-auto object-contain" />
                 </div>
                 <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-2xl blur-xl opacity-30 -z-10" />
               </div>

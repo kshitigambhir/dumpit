@@ -1,3 +1,5 @@
+'use client'
+
 import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -132,4 +134,3 @@ export function useAuth() {
   }
   return context;
 }
-
