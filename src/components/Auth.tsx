@@ -3,8 +3,6 @@
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 export function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -27,10 +25,19 @@ export function Auth() {
 
   const checkUsernameUniqueness = async (username: string): Promise<boolean> => {
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('username', '==', username));
-      const snapshot = await getDocs(q);
-      return snapshot.empty; // true if available, false if taken
+      const response = await fetch('/api/check-username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+
+      if (!response.ok) {
+        console.error('API error:', response.status);
+        return false; // Assume taken on error
+      }
+
+      const data = await response.json();
+      return data.available;
     } catch (error) {
       console.error('Error checking username uniqueness:', error);
       return false; // Assume taken on error
