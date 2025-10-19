@@ -1,37 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-
-// Lazy initialization of Firebase Admin
-let db: any = null;
-
-const initializeFirebaseAdmin = () => {
-  if (!db) {
-    if (!getApps().length) {
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-      if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-        throw new Error('Missing Firebase Admin SDK environment variables');
-      }
-
-      initializeApp({
-        credential: cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: privateKey,
-        }),
-      });
-    }
-    db = getFirestore();
-  }
-  return db;
-};
+import { getServerFirestore } from '../_utils/firebaseAdmin';
 
 // GET /api/resources?uid=<uid> - Get user's resources
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const uid = searchParams.get('uid');
+    const collectionId = searchParams.get('collectionId');
 
     if (!uid) {
       return NextResponse.json(
@@ -40,12 +15,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = initializeFirebaseAdmin();
+    const db = getServerFirestore();
 
-    const resourcesQuery = await db.collection('resources')
-      .where('user_id', '==', uid)
-      .orderBy('created_at', 'desc')
-      .get();
+    let query: FirebaseFirestore.Query = db.collection('resources')
+      .where('user_id', '==', uid);
+
+    if (collectionId) {
+      query = query.where('collection_ids', 'array-contains', collectionId);
+    }
+
+    const resourcesQuery = await query.orderBy('created_at', 'desc').get();
 
     const resources = resourcesQuery.docs.map((doc: any) => ({
       id: doc.id,
@@ -69,7 +48,7 @@ export async function GET(request: NextRequest) {
 // POST /api/resources - Create new resource
 export async function POST(request: NextRequest) {
   try {
-    const { user_id, title, link, note, tag, is_public } = await request.json();
+    const { user_id, title, link, note, tag, is_public, collection_ids } = await request.json();
 
     // Validate required fields
     if (!user_id || !title || !link || !tag) {
@@ -87,7 +66,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = initializeFirebaseAdmin();
+    const db = getServerFirestore();
+
+    const normalizedCollectionIds: string[] = Array.isArray(collection_ids)
+      ? collection_ids.filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
+      : [];
+
+    const resourceRef = db.collection('resources').doc();
+    const now = new Date();
 
     const resourceData = {
       user_id,
@@ -96,15 +82,34 @@ export async function POST(request: NextRequest) {
       note: note || null,
       tag,
       is_public: is_public ?? false,
-      created_at: new Date(),
+      collection_ids: normalizedCollectionIds,
+      created_at: now,
+      updated_at: now,
     };
 
-    const docRef = await db.collection('resources').add(resourceData);
+    await db.runTransaction(async (transaction) => {
+      transaction.set(resourceRef, resourceData);
+
+      normalizedCollectionIds.forEach((collectionId: string) => {
+        const membershipRef = db
+          .collection('users')
+          .doc(user_id)
+          .collection('collections')
+          .doc(collectionId)
+          .collection('resources')
+          .doc(resourceRef.id);
+
+        transaction.set(membershipRef, {
+          resource_id: resourceRef.id,
+          added_at: now,
+        });
+      });
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Resource created successfully',
-      resourceId: docRef.id
+      resourceId: resourceRef.id
     });
 
   } catch (error) {
@@ -119,7 +124,7 @@ export async function POST(request: NextRequest) {
 // PUT /api/resources - Update resource
 export async function PUT(request: NextRequest) {
   try {
-    const { id, title, link, note, tag, is_public } = await request.json();
+    const { id, title, link, note, tag, is_public, collection_ids } = await request.json();
 
     // Validate required fields
     if (!id) {
@@ -137,7 +142,18 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const db = initializeFirebaseAdmin();
+    const db = getServerFirestore();
+    const resourceRef = db.collection('resources').doc(id);
+
+    const existingSnapshot = await resourceRef.get();
+    if (!existingSnapshot.exists) {
+      return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+    }
+
+    const existingData = existingSnapshot.data() || {};
+    const existingCollectionIds: string[] = Array.isArray(existingData.collection_ids)
+      ? existingData.collection_ids
+      : [];
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
@@ -145,8 +161,54 @@ export async function PUT(request: NextRequest) {
     if (note !== undefined) updateData.note = note || null;
     if (tag !== undefined) updateData.tag = tag;
     if (is_public !== undefined) updateData.is_public = is_public;
+    updateData.updated_at = new Date();
 
-    await db.collection('resources').doc(id).update(updateData);
+    let normalizedCollectionIds: string[] | undefined;
+
+    if (collection_ids !== undefined) {
+      normalizedCollectionIds = Array.isArray(collection_ids)
+        ? collection_ids.filter((item: unknown): item is string => typeof item === 'string' && item.trim().length > 0)
+        : [];
+      updateData.collection_ids = normalizedCollectionIds;
+    }
+
+    const userId = existingData.user_id;
+
+    await db.runTransaction(async (transaction) => {
+      transaction.update(resourceRef, updateData);
+
+      if (normalizedCollectionIds && userId) {
+        const toAdd = normalizedCollectionIds.filter((id) => !existingCollectionIds.includes(id));
+        const toRemove = existingCollectionIds.filter((id) => !normalizedCollectionIds!.includes(id));
+
+        const now = new Date();
+
+        toAdd.forEach((collectionId) => {
+          const membershipRef = db
+            .collection('users')
+            .doc(userId)
+            .collection('collections')
+            .doc(collectionId)
+            .collection('resources')
+            .doc(resourceRef.id);
+          transaction.set(membershipRef, {
+            resource_id: resourceRef.id,
+            added_at: now,
+          });
+        });
+
+        toRemove.forEach((collectionId) => {
+          const membershipRef = db
+            .collection('users')
+            .doc(userId)
+            .collection('collections')
+            .doc(collectionId)
+            .collection('resources')
+            .doc(resourceRef.id);
+          transaction.delete(membershipRef);
+        });
+      }
+    });
 
     return NextResponse.json({
       success: true,
@@ -175,9 +237,34 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const db = initializeFirebaseAdmin();
+    const db = getServerFirestore();
+    const resourceRef = db.collection('resources').doc(id);
+    const snapshot = await resourceRef.get();
 
-    await db.collection('resources').doc(id).delete();
+    if (!snapshot.exists) {
+      return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+    }
+
+    const data = snapshot.data() || {};
+    const userId: string | undefined = data.user_id;
+    const collectionIds: string[] = Array.isArray(data.collection_ids) ? data.collection_ids : [];
+
+    await db.runTransaction(async (transaction) => {
+      if (userId && collectionIds.length > 0) {
+        collectionIds.forEach((collectionId) => {
+          const membershipRef = db
+            .collection('users')
+            .doc(userId)
+            .collection('collections')
+            .doc(collectionId)
+            .collection('resources')
+            .doc(id);
+          transaction.delete(membershipRef);
+        });
+      }
+
+      transaction.delete(resourceRef);
+    });
 
     return NextResponse.json({
       success: true,

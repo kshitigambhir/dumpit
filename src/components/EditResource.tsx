@@ -24,7 +24,7 @@ interface Resource {
   note?: string;
   tag: string;
   is_public: boolean;
-  created_at: Date;
+  created_at: Date | string | { toDate: () => Date };
 }
 
 interface EditResourceProps {
