@@ -1,7 +1,7 @@
-import { isSupported as analyticsSupported, getAnalytics } from 'firebase/analytics';
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { isSupported as analyticsSupported, getAnalytics } from "firebase/analytics";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 // Read config from Next.js env. These should be set in your .env as NEXT_PUBLIC_FIREBASE_*
 const firebaseConfig = {
@@ -15,37 +15,51 @@ const firebaseConfig = {
 };
 
 // Validate required keys
-const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'] as const;
+const requiredKeys = ["apiKey", "authDomain", "projectId", "appId"] as const;
 const missing = requiredKeys.filter((k) => !(firebaseConfig as any)[k]);
-const isDummyConfig = missing.length > 0 || firebaseConfig.apiKey?.includes('Dummy') || firebaseConfig.apiKey?.includes('dummy');
+const isDummyConfig =
+  missing.length > 0 ||
+  firebaseConfig.apiKey?.includes("Dummy") ||
+  firebaseConfig.apiKey?.includes("dummy");
 
 if (isDummyConfig) {
   // eslint-disable-next-line no-console
   console.warn(
-    '⚠️  Firebase configuration is incomplete or using dummy values. \n' +
-    'Please add NEXT_PUBLIC_FIREBASE_* environment variables to your .env.local file.\n' +
-    'See FIREBASE_SETUP.md for instructions.'
+    "⚠️  Firebase configuration is incomplete or using dummy values.\n" +
+      "Please add NEXT_PUBLIC_FIREBASE_* environment variables to your .env.local file.\n" +
+      "See FIREBASE_SETUP.md for instructions."
   );
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig as any);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// --- SSR-SAFE INITIALIZATION --- //
+const app =
+  typeof window !== "undefined"
+    ? !getApps().length
+      ? initializeApp(firebaseConfig as any)
+      : getApp()
+    : null;
+
+// Lazy getters — safe for SSR
+export const getFirebaseAuth = () => (app ? getAuth(app) : null);
+export const getFirebaseDb = () => (app ? getFirestore(app) : null);
+
+// Compatibility exports for existing imports (old code)
+export const auth = getFirebaseAuth();
+export const db = getFirebaseDb();
 
 // Guard analytics initialization: it will fail in SSR or if measurementId is not provided
 (async () => {
   try {
-    if (firebaseConfig.measurementId && typeof window !== 'undefined') {
+    if (firebaseConfig.measurementId && typeof window !== "undefined" && app) {
       const ok = await analyticsSupported();
       if (ok) {
         getAnalytics(app);
       }
     }
   } catch (err) {
-    // Not fatal — analytics optional, but surface the error to console for debugging
+    // Not fatal — analytics optional
     // eslint-disable-next-line no-console
-    console.warn('Firebase analytics not available:', err);
+    console.warn("Firebase analytics not available:", err);
   }
 })();
 
