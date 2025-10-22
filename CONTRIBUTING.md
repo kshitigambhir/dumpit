@@ -3,14 +3,16 @@
 Thank you for your interest in contributing to DumpIt — a minimal resource vault for saving and sharing useful links and multi-media content. We welcome contributions from beginners and experienced developers alike. This guide will help you get started quickly.
 
 ## Table of Contents
-- Getting started
-- How to file a good issue
-- How to propose a change (pull request)
-- Branching & commit message guidelines
-- Code style and testing
-- Good First Issues & labels
-- Code of Conduct
-- Contact
+
+- [Getting Started](#getting-started)
+- [How to File a Good Issue](#how-to-file-a-good-issue)
+- [How to Propose a Change (Pull Request)](#how-to-propose-a-change-pull-request)
+- [Branching & Commit Message Guidelines](#branching--commit-message-guidelines)
+- [Code Style and Testing](#code-style-and-testing)
+- [Good First Issues & Labels](#good-first-issues--labels)
+- [Code of Conduct](#code-of-conduct)
+- [Contact](#contact)
+
 
 ## Getting started
 1. Fork the repo and clone it locally:
